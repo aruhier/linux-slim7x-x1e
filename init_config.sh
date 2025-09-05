@@ -7,4 +7,4 @@ if [ -e .config ]; then
   rm .config
 fi
 
-make fedora_defconfig ubuntu.config aruhier.config
+make fedora_defconfig aruhier.config
