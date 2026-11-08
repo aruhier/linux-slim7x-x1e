@@ -146,6 +146,9 @@ SYM_FUNC_START_LOCAL(__pi_memset_generic)
 	cmp	count, #128
 	b.lt	.Lnot_short /*count is at least  128 bytes*/
 
+alternative_if ARM64_WORKAROUND_QCOM_ORYON_DC_ZVA
+	b	.Lnot_short
+alternative_else_nop_endif
 	mrs	tmp1, dczid_el0
 	tbnz	tmp1, #4, .Lnot_short
 	mov	tmp3w, #4

@@ -28,6 +28,9 @@ alternative_else_nop_endif
 	ret
 .Lno_mops:
 #endif
+alternative_if ARM64_WORKAROUND_QCOM_ORYON_DC_ZVA
+	b	2f
+alternative_else_nop_endif
 	mrs	x1, dczid_el0
 	tbnz	x1, #4, 2f	/* Branch if DC ZVA is prohibited */
 	and	w1, w1, #0xf

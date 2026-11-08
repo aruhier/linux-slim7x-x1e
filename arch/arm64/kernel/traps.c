@@ -558,6 +558,14 @@ void do_el1_mops(struct pt_regs *regs, unsigned long esr)
 		uaccess_ttbr0_disable();			\
 	}
 
+static int emulate_dc_zva(unsigned long address)
+{
+	u64 bs = 4UL << (read_sysreg(dczid_el0) & 0xf);
+	void __user *va = (void __user *)(address & ~(bs - 1));
+
+	return copy_to_user(va, page_to_virt(ZERO_PAGE(0)), bs) ? -EFAULT : 0;
+}
+
 static void user_cache_maint_handler(unsigned long esr, struct pt_regs *regs)
 {
 	unsigned long tagged_address, address;
@@ -586,6 +594,9 @@ static void user_cache_maint_handler(unsigned long esr, struct pt_regs *regs)
 		break;
 	case ESR_ELx_SYS64_ISS_CRM_IC_IVAU:	/* IC IVAU */
 		__user_cache_maint("ic ivau", address, ret);
+		break;
+	case ESR_ELx_SYS64_ISS_CRM_DC_ZVA:	/* DC ZVA, emulated */
+		ret = emulate_dc_zva(address);
 		break;
 	default:
 		force_signal_inject(SIGILL, ILL_ILLOPC, regs->pc, 0);

@@ -663,6 +663,22 @@ static const struct midr_range erratum_ac04_cpu_23_list[] = {
 #endif
 
 #ifdef CONFIG_ARM64_WORKAROUND_DISABLE_CNP
+static const struct midr_range qcom_oryon_x1_list[] = {
+	MIDR_ALL_VERSIONS(MIDR_QCOM_ORYON_X1),
+	{}
+};
+
+/*
+ * DC ZVA misbehaves on X1 once the clusters have been through the CL5
+ * power collapse state, which can reset the SoC. Forbid it at EL0
+ * (DCZID_EL0.DZP then reads as 1, and stray uses trap and get emulated)
+ * and make the kernel's clear_page()/memset() avoid it.
+ */
+static void qcom_oryon_disable_dc_zva(const struct arm64_cpu_capabilities *__unused)
+{
+	sysreg_clear_set(sctlr_el1, SCTLR_EL1_DZE, 0);
+}
+
 static const struct midr_range cnp_erratum_cpus[] = {
 #ifdef CONFIG_NVIDIA_CARMEL_CNP_ERRATUM
 	MIDR_ALL_VERSIONS(MIDR_NVIDIA_CARMEL),
@@ -1027,10 +1043,13 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 	{
 		.desc = "Broken CNTVOFF_EL2",
 		.capability = ARM64_WORKAROUND_QCOM_ORYON_CNTVOFF,
-		ERRATA_MIDR_RANGE_LIST(((const struct midr_range[]) {
-					MIDR_ALL_VERSIONS(MIDR_QCOM_ORYON_X1),
-					{}
-				})),
+		ERRATA_MIDR_RANGE_LIST(qcom_oryon_x1_list),
+	},
+	{
+		.desc = "Broken DC ZVA after cluster power collapse",
+		.capability = ARM64_WORKAROUND_QCOM_ORYON_DC_ZVA,
+		ERRATA_MIDR_RANGE_LIST(qcom_oryon_x1_list),
+		.cpu_enable = qcom_oryon_disable_dc_zva,
 	},
 	{
 		.desc = "Apple IMPDEF PMUv3 Traps",
